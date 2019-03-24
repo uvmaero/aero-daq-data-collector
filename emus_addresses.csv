@@ -1,0 +1,10 @@
+0x007,DC,emus,Diagnostic Codes
+0x020,VG0,emus,Group0 Cell Voltages
+0x021,VG1,emus,Group 1 Cell Voltages
+0x022,VG2,emus,Group 2 Cell Voltages
+0x023,VG3,emus,Group 3 Cell Voltages
+0x024,VG4,emus,Group 4 Cell Voltages
+0x025,VG5,emus,Group 5 Cell Voltages
+0x026,VG6,emus,Group 6 Cell Voltages
+0x027,VG7,emus,Group 7 Cell Voltages
+0x028,VG8,emus,Group 8 Cell Voltages

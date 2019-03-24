@@ -1,5 +1,8 @@
-class CanError(Exception):
-    def __init__(self, message):
-        # pass the exception error message to the parent object
-        super().__init__(message)
+class RinehartException(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
+class RinehartError(RinehartException):
+    def __init__(self,*args,**kwargs):
+        RinehartException.__init__(self,*args,**kwargs)
 

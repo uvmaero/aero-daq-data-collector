@@ -1,0 +1,16 @@
+0x0A0,T1,rinehart,Temperature Set 1
+0x0A1,T2,rinehart,Temperature Set 2
+0x0A2,T3,rinehart,Temperature Set 3
+0x0A3,AIV,rinehart,Analog Input Voltages
+0x0A4,DIS,rinehart,Digital Input Status
+0x0A5,MPI,rinehart,Motor Position Info
+0x0A6,CI,rinehart,Current Info
+0x0A7,VI,rinehart,Voltage Info
+0x0A8,FI,rinehart,Flux Info
+0x0A9,IV,rinehart,Internal Voltages
+0x0AA,IS,rinehart,Internal States
+0x0AB,FC,rinehart,Fault Codes
+0x0AC,TT,rinehart,Torque and Timer Info
+0x0AD,MIF,rinehart,Modulation and Flux Info
+0x0AE,FIRM,rinehart,Firmware Info
+0x0AF,DD,rinehart,Diagnostic Data
