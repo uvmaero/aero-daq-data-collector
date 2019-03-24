@@ -50,7 +50,7 @@ class INS:
 
         # initialize the INS data structure
         self.ins_data = {
-            "timestamp": time.time(),
+            "ts": time.time(),
             "accelX": 0,
             "accelY": 0,
             "accelZ": 0,
@@ -78,7 +78,7 @@ class INS:
             points = packet.data()
 
             # get the current timestamp
-            self.ins_data["timestamp"] = time.time()
+            self.ins_data["ts"] = time.time()
             
             # process all the data points in the packet
             for dataPoint in points:
