@@ -77,13 +77,14 @@ class Datacollector():
     #   data: the data to write to the json file, this will likely be a python dictionary
     def RotateFile(self,data, max_count, file_size):
         current_file = f'{self.indX}.dat'
+        current_file_path = os.path.join(self.fileDir, current_file)
         # Check if the current file has exceeded its size limit, if so increase
         # the counter index and return the updated counter index to the user
         flags = 'w'
-        if os.path.join(self.fileDir).isfile(current_file):
+        if os.path.isfile(current_file_path):
             flags = 'a'
             # Join the fileDirectory which contains datalogging files
-            if int(os.path.join(self.fileDir).getsize(current_file)) > file_size*1000:
+            if int(os.path.getsize(current_file_path)) > file_size*1000:
                 self.indX += 1
                 # Check if we have exceeded the max file count
                 if self.indX > max_count:
