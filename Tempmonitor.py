@@ -12,14 +12,40 @@ from CanDevice import CanDevice
 
 class Tempmonitor(CanDevice):
 
-    def __init__(self, filename, offset = 0):
-        super().__init__(filename,offset)
+    def __init__(self, filename, offset = 0, deviceName1="Tempmonitor1",deviceName2="Tempmonitor2"):
+        self.deviceName1 = deviceName1
+        self.deviceName2 = deviceName2
+        self.offset = offset
+        self.addressBook = self.readAddress("%s" % filename)
         self.cellTemps = [0] * 80
         self.tempDict = {"cell_temp":self.cellTemps}
         # pre allocate a list of 80 elements to hold 80 cell voltages
         self.dataDict = {"overtemp1":0,\
                         "overtemp2":0}
     
+    # Purpose: Read a csv file and create a tuple using its contents. Used during initialization to
+    # create a list of relevant CAN addresses with the CAN ID offset preapplied
+    # Output Format: ((CANID1,ID_NAME1),(CANID2,ID_NAME2),...)
+    # Example:       ((0x0A0,Temp1),(0x0A1,Temp2),(0x0A2,Temp3),(0x0A3,AIV),...)
+    def readAddress(self,filename):
+        try:
+            with open(filename, newline='') as csvfile:
+                # Make an empty list to hold data for the tuple
+                addressBook = {}
+                csvread = csv.reader(csvfile)
+                # Read each line of the csv file & extract the address as an integer
+                for line in csvread:
+                    # Check if the line of the CSV file is intended for this device
+                    if line[2] in self.deviceName1 or self.deviceName2:
+                        address = self.offset + int(line[0])
+                        name = line[1]
+                        #write a tuple to the address book containing (CANID,ID_Name)
+                        addressBook[name] = address
+                # Return the address book as a tuple
+                return addressBook
+        except Exception as e:
+            print(e)
+
     # Purpose: Process Individual Cell Voltage Data From the EMUS
     # bytes 0-3 contain info on max and min temperature, this will be ignored
     # byte 4 contains fault information

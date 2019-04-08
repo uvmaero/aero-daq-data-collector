@@ -16,9 +16,9 @@ class CanDevice(object):
     #   0x0A2,T3
     #   0x0A3,AIV ... and so on
     #   Offset - a decimal value describing the CAN offset applied
-    def __init__(self, filename, Offset: int, deviceName: str):
+    def __init__(self, filename, offset: int, deviceName: str):
         self.deviceName = deviceName
-        self.Offset = Offset
+        self.offset = offset
         self.addressBook = self.readAddress("%s" % filename)
 
     # Purpose: Read a csv file and create a tuple using its contents. Used during initialization to
@@ -35,7 +35,7 @@ class CanDevice(object):
                 for line in csvread:
                     # Check if the line of the CSV file is intended for this device
                     if line[2] == self.deviceName:
-                        address = self.Offset + int(line[0])
+                        address = self.offset + int(line[0])
                         name = line[1]
                         #write a tuple to the address book containing (CANID,ID_Name)
                         addressBook[name] = address
