@@ -32,7 +32,7 @@ class Datacollector():
         self.tempmonitor = Tempmonitor('CAN Addresses.csv')
         self.frontdaq = Daqboard('CAN Addresses.csv',deviceName='Front DAQ')
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
-        self.ins = INS('COM3')
+        self.ins = INS('/dev/ttyS1')
         
         # Make new directory to save files to
         self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -102,7 +102,7 @@ class Datacollector():
     # Purpose: begin logging data
     def startLogging(self,can_port = '/dev/ttyACM0'):
         while True:
-            with serial.Serial(can_port,xonxoff = True) as ser:
+            with serial.Serial(can_port,xonxoff = True,timeout=.01) as ser:
                 can_data = ser.readline()
                 can_data = tuple(str(can_data).split())
             # Update the data dictionary
