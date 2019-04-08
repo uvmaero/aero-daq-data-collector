@@ -84,7 +84,7 @@ class Datacollector():
         if os.path.isfile(current_file_path):
             flags = 'a'
             # Join the fileDirectory which contains datalogging files
-            if int(os.path.getsize(current_file_path)) > file_size*1000:
+            if int(os.path.getsize(current_file_path)) > file_size:
                 self.indX += 1
                 # Check if we have exceeded the max file count
                 if self.indX > max_count:
