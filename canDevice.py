@@ -35,10 +35,12 @@ class CanDevice(object):
                 for line in csvread:
                     # Check if the line of the CSV file is intended for this device
                     if line[2] == self.deviceName:
-                        address = self.offset + int(line[0])
-                        name = line[3]
-                        #write a tuple to the address book containing (CANID,ID_Name)
-                        addressBook[name] = address
+                        # Check if the Address is of any interest to us
+                        if line[4] not in (None,""):
+                            address = self.offset + int(line[0])
+                            name = line[4]
+                            #write a tuple to the address book containing (CANID,ID_Name)
+                            addressBook[name] = address
                 # Return the address book as a tuple
                 return addressBook
         except Exception as e:

@@ -12,7 +12,7 @@ from CanDevice import CanDevice
 
 class Pedalboard(CanDevice):
 
-    def __init__(self, filename, offset = 0, deviceName="Pedal"):
+    def __init__(self, filename, offset, deviceName="Pedal"):
         super().__init__(filename,offset,deviceName)
         # pre allocate a list of 80 elements to hold 80 cell voltages
         self.dataDict = {"pedal0":0,\

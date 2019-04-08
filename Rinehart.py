@@ -22,7 +22,7 @@ class Rinehart(CanDevice):
     #   Offset - a decimal value describing the CAN offset applied 
     # Outputs:
     #   addressBook - used to parse data
-    def __init__(self, filename, offset=0, deviceName="Rinehart"):
+    def __init__(self, filename, offset=160, deviceName="Rinehart"):
         # 
         super().__init__(filename,offset,deviceName)
         # Initialize a dictionary to be used to return all data at once
