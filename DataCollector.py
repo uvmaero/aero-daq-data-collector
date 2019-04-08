@@ -98,10 +98,6 @@ class Datacollector():
     def startLogging(self,can_port = '/dev/ttyACM0'):
         while True:
             with serial.Serial(can_port,xonxoff = True) as ser:
-
-                # For TESTING ONLY, DISABLE LATER!!!!!!!!!!!
-                self.rinehart.heartbeat()
-
                 can_data = ser.readline()
                 can_data = tuple(str(can_data).split())
             # Update the data dictionary
