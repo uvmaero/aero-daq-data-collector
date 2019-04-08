@@ -22,9 +22,9 @@ class Rinehart(CanDevice):
     #   Offset - a decimal value describing the CAN offset applied 
     # Outputs:
     #   addressBook - used to parse data
-    def __init__(self, filename, offset=160, deviceName="Rinehart"):
+    def __init__(self, filename, deviceName="Rinehart"):
         # 
-        super().__init__(filename,offset,deviceName)
+        super().__init__(filename, deviceName)
         # Initialize a dictionary to be used to return all data at once
         # TODO 03/19/18: Make a dictionary builder function which uses a csv file
         # to define the dictionary keys

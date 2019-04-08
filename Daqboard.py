@@ -12,8 +12,8 @@ from CanDevice import CanDevice
 
 class Daqboard(CanDevice):
 
-    def __init__(self, filename, offset, deviceName):
-        super().__init__(filename,offset,deviceName)
+    def __init__(self, filename, deviceName):
+        super().__init__(filename,deviceName)
         # pre allocate a list of 80 elements to hold 80 cell voltages
         self.leftdataDict = {"wheel_speed":0,"damper_pos":0}
         self.rightdataDict = {"wheel_speed":0,"damper_pos":0}

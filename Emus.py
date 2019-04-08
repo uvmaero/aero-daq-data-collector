@@ -12,8 +12,8 @@ from CanDevice import CanDevice
 
 class Emus(CanDevice):
 
-    def __init__(self, filename, offset, deviceName="Emus"):
-        super().__init__(filename,offset,deviceName)
+    def __init__(self, filename, deviceName="Emus"):
+        super().__init__(filename,deviceName)
         # pre allocate a list of 80 elements to hold 80 cell voltages
         self.cellVoltages = [0] * 80
         self.voltageDict = {"cell_volt":self.cellVoltages}

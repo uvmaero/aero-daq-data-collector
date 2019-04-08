@@ -12,10 +12,9 @@ from CanDevice import CanDevice
 
 class Tempmonitor(CanDevice):
 
-    def __init__(self, filename, offset, deviceName1="Tempmonitor1",deviceName2="Tempmonitor2"):
+    def __init__(self, filename, deviceName1="Tempmonitor1",deviceName2="Tempmonitor2"):
         self.deviceName1 = deviceName1
         self.deviceName2 = deviceName2
-        self.offset = offset
         self.addressBook = self.readAddress("%s" % filename)
         self.cellTemps = [0] * 80
         self.tempDict = {"cell_temp":self.cellTemps}
@@ -39,7 +38,7 @@ class Tempmonitor(CanDevice):
                     if line[2] in self.deviceName1 or self.deviceName2:
                         # Check if the Address is of any interest to us
                         if line[4] not in (None,""):
-                            address = self.offset + int(line[0])
+                            address = int(line[0])
                             name = line[4]
                             #write a tuple to the address book containing (CANID,ID_Name)
                             addressBook[name] = address
