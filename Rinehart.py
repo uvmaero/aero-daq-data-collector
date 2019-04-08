@@ -5,7 +5,7 @@
 # Information Sources: Rinehart Motor Controller, EMUS BMS, Temp Monitor Board
 # Information Sources: Steering Position, Wheel Speed, Throttle Position, Brake Pressure, Damper Position
 
-from canpak import Canpak
+from Canpak import Canpak
 import csv
 from RinehartError import RinehartError
 from CanDevice import CanDevice
