@@ -32,6 +32,8 @@ class Tempmonitor(CanDevice):
                 # Make an empty list to hold data for the tuple
                 addressBook = {}
                 csvread = csv.reader(csvfile)
+                # Skip the first line of the csv file
+                next(csvread)
                 # Read each line of the csv file & extract the address as an integer
                 for line in csvread:
                     # Check if the line of the CSV file is intended for this device
