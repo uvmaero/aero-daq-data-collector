@@ -25,7 +25,7 @@ class Datacollector():
     # Inputs:
     #   fileSize - an integer representing the maximum allowable file size in Megabytes
     #   fileCount - an integer representing the maximum number of data files allowed
-    def __init__(self,fileSize,fileCount):
+    def __init__(self,fileSize,fileCount,workingDir=''):
         # create a Rinehart canDevices using the extended canDevice classes
         self.rinehart = Rinehart('CAN Addresses.csv')
         self.emus = Emus('CAN Addresses.csv')
@@ -34,9 +34,14 @@ class Datacollector():
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
         self.ins = INS('/dev/ttyS1')
         
-        # Make new directory to save files to
-        self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-        os.makedirs(self.fileDir)
+        # Make new directory to save files to, first check if user supplied a
+        # custom directory
+        if workingDir == '':
+            self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            os.makedirs(self.fileDir)
+        else:
+            self.fileDir = os.path.join(workingDir,datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            os.makedirs(self.fileDir)
         # Datalogging file parameters
         self.fileSize = fileSize * 10**6
         self.fileCount = fileCount
