@@ -14,6 +14,7 @@ from DataCollectorError import DataCollectorError
 import os
 from time import time
 import serial
+import datetime
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -33,6 +34,9 @@ class Datacollector():
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
         self.ins = INS('COM3')
         
+        # Make new directory to save files to
+        self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        os.makedirs(self.fileDir)
         # Datalogging file parameters
         self.fileSize = fileSize * 10**6
         self.fileCount = fileCount
@@ -76,9 +80,10 @@ class Datacollector():
         # Check if the current file has exceeded its size limit, if so increase
         # the counter index and return the updated counter index to the user
         flags = 'w'
-        if os.path.isfile(current_file):
+        if os.path.join(self.fileDir).isfile(current_file):
             flags = 'a'
-            if int(os.path.getsize(current_file)) > file_size*1000:
+            # Join the fileDirectory which contains datalogging files
+            if int(os.path.join(self.fileDir).getsize(current_file)) > file_size*1000:
                 self.indX += 1
                 # Check if we have exceeded the max file count
                 if self.indX > max_count:
@@ -88,8 +93,8 @@ class Datacollector():
                 
                 print("New Data Log File: " + current_file)
         # Write data to the current file
-        
-        with open(current_file,flags) as write_file:  
+        # join the fileDirectory which contains datalogging files
+        with open(os.path.join(self.fileDir,current_file),flags) as write_file:  
             json.dump(data,write_file)
             write_file.write('\n')
     
