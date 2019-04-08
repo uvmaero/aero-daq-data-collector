@@ -16,7 +16,8 @@ class CanDevice(object):
     #   0x0A2,T3
     #   0x0A3,AIV ... and so on
     #   Offset - a decimal value describing the CAN offset applied
-    def __init__(self, filename, Offset):
+    def __init__(self, filename, Offset: int, deviceName: str):
+        self.deviceName = deviceName
         self.Offset = Offset
         self.addressBook = self.readAddress("%s" % filename)
 
@@ -32,10 +33,12 @@ class CanDevice(object):
                 csvread = csv.reader(csvfile)
                 # Read each line of the csv file & extract the address as an integer
                 for line in csvread:
-                    address = self.Offset + int(line[0],16)
-                    name = line[1]
-                    #write a tuple to the address book containing (CANID,ID_Name)
-                    addressBook[name] = address
+                    # Check if the line of the CSV file is intended for this device
+                    if line[2] == self.deviceName:
+                        address = self.Offset + int(line[0])
+                        name = line[1]
+                        #write a tuple to the address book containing (CANID,ID_Name)
+                        addressBook[name] = address
                 # Return the address book as a tuple
                 return addressBook
         except Exception as e:
