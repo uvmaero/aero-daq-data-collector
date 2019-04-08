@@ -110,7 +110,9 @@ class Datacollector():
             # write data to logging file
             self.RotateFile(self.dataDict,self.fileCount,self.fileSize)
 
-test = Datacollector(1,10)
-test.startLogging('COM3')
+# Start Logging
+if __name__=="__main__":
+    test = Datacollector(1,10)
+    test.startLogging()
 
             
