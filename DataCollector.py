@@ -26,11 +26,11 @@ class Datacollector():
     #   fileCount - an integer representing the maximum number of data files allowed
     def __init__(self,fileSize,fileCount):
         # create a Rinehart canDevices using the extended canDevice classes
-        self.rinehart = Rinehart('rinehart_addresses.csv')
-        self.emus = Emus('emus_addresses.csv')
-        self.tempmonitor = Tempmonitor('temp_addresses.csv')
-        self.frontdaq = Daqboard('frontdaq_addresses.csv')
-        self.reardaq = Daqboard('reardaq_addresses.csv')
+        self.rinehart = Rinehart('CAN Addresses.csv')
+        self.emus = Emus('CAN Addresses.csv')
+        self.tempmonitor = Tempmonitor('CAN Addresses.csv')
+        self.frontdaq = Daqboard('CAN Addresses.csv',deviceName='Front DAQ')
+        self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
         self.ins = INS('COM3')
         
         # Datalogging file parameters
