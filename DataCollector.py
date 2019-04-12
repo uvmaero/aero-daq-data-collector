@@ -126,7 +126,9 @@ class Datacollector():
 
 # Start Logging
 if __name__=="__main__":
-    test = Datacollector(1,10)
+    # fileSize represents the max filesize in MegaBytes
+    # fileCount represents the number of files which we will allow to be made
+    test = Datacollector(fileSize=10,fileCount=1000)
     test.startLogging()
 
             
