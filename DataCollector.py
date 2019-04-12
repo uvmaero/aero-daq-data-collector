@@ -15,6 +15,7 @@ import os
 from time import time
 import serial
 import datetime
+import gzip
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -90,12 +91,19 @@ class Datacollector():
             flags = 'a'
             # Join the fileDirectory which contains datalogging files
             if int(os.path.getsize(current_file_path)) > file_size:
+                # Zip the  last file created
+                with open(current_file_path,'rb') as fin, gzip.open(f'{current_file_path}.gz','wb') as fout:
+                    fout.writelines(fin)
+                # remove the unzipped version of the newly zipped file to save space
+                os.remove(current_file_path)
+                # Increment filecount index
                 self.indX += 1
                 # Check if we have exceeded the max file count
                 if self.indX > max_count:
                     raise DataCollectorError("TooManyFilesError: dataCollector.py can no longer create new data logging files, the file limit has been exceeded!")
                 # update the filename
                 current_file = f'{self.indX}.dat'
+                current_file_path = os.path.join(self.fileDir, current_file)
                 
                 print("New Data Log File: " + current_file)
         # Write data to the current file
