@@ -16,6 +16,7 @@ from time import time
 import serial
 import datetime
 import gzip
+import shutil
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -35,14 +36,32 @@ class Datacollector():
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
         self.ins = INS('/dev/ttyS1')
         
+        # workingDir used by the zipIt function to navigate to the folder and 
+        # check for subfolders to zip
+        self.workingDir = workingDir
+
         # Make new directory to save files to, first check if user supplied a
         # custom directory
         if workingDir == '':
             self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
             os.makedirs(self.fileDir)
+            self.zipIt(directory=os.getcwd())
         else:
             self.fileDir = os.path.join(workingDir,datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
             os.makedirs(self.fileDir)
+            self.zipIt(directory=self.workingDir)
+
+        # Manifest.json dict
+        self.manifest = {
+            # set date to mm-dd-yy format
+            "date": datetime.datetime.now().strftime('%m-%d-%Y'),
+            # set start_time using 24 hr clock with hh:mm
+            "start_time": datetime.datetime.now().strftime('%H:%M'),
+            # set start_time using 24 hr clock with hh:mm
+            "end_time": datetime.datetime.now().strftime('%H:%M'),
+            # The number of data files (equal to self.indX + 1)
+            "data_files": 1
+        }
         # Datalogging file parameters
         self.fileSize = fileSize * 10**6
         self.fileCount = fileCount
@@ -59,8 +78,17 @@ class Datacollector():
                          'rear_right': 0}
 
     # Purpose: zip any folders currently contained in the user specified base directory
-    def zipIt(self):
-        return
+    def zipIt(self,directory):
+        # see if the supplied directory contains any subfolders
+        if len(os.walk(self.workingDir)) > 0:
+            # zip all directories insize the working directory
+            for root, dirs, files in os.walk(self.workingDir):
+                shutil.make_archive(dirs, 'zip',self.workingDir)
+
+            
+            
+
+        
     # Purpose: take the data dictionaries created by other data-device objects and build the overall data dictionary
     def buildData(self,can_data):
         self.dataDict['ts'] = time()
@@ -84,8 +112,10 @@ class Datacollector():
     #   count: the maximum number of files you will allow to be created
     #   data: the data to write to the json file, this will likely be a python dictionary
     def RotateFile(self,data, max_count, file_size):
-        current_file = f'{self.indX}.dat'
+        current_file = f'{self.indX}.dat'   # This is the .dat file used for storing data
+        manifest_file = 'manifest.json'     # This is the manifest.json file
         current_file_path = os.path.join(self.fileDir, current_file)
+        #manifest_file_path = os.path.join(self.fileDir, manifest_file)
         # Check if the current file has exceeded its size limit, if so increase
         # the counter index and return the updated counter index to the user
         flags = 'w'
@@ -113,6 +143,11 @@ class Datacollector():
         with open(os.path.join(self.fileDir,current_file),flags) as write_file:  
             json.dump(data,write_file)
             write_file.write('\n')
+        # Update manifest.json
+        with open(os.path.join(self.fileDir,manifest_file),'w') as write_file:
+            self.manifest['end_time'] = datetime.datetime.now().strftime('%H:%M')
+            self.manifest['data_files'] = self.indX + 1
+            json.dump(self.manifest,write_file)
     
         
     # Purpose: begin logging data
