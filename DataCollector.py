@@ -154,6 +154,7 @@ class Datacollector():
         
     # Purpose: begin logging data
     def startLogging(self,can_port = '/dev/ttyACM0'):
+        # changed serial functionality
         ser = serial.Serial(can_port,xonxoff=True,timeout=0.01)
         while True:
             try:
