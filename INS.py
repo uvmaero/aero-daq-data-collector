@@ -5,7 +5,6 @@
 # acquisition system
 
 import mscl
-import time
 
 ERROR_COLOR = "\033[91m"
 END_COLOR = "\033[0m"
@@ -35,9 +34,14 @@ class INS:
         gnssChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_GNSS_LLH_POSITION, mscl.SampleRate.Hertz(4)))
         gnssChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_GNSS_NED_VELOCITY, mscl.SampleRate.Hertz(4)))
 
+        # setup estimation filter channels
+        estFilterChs = mscl.MipChannels()
+        estFilterChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_SENSOR_EULER_ANGLES, mscl.SampleRate.Hertz(50)))
+        
         # make channels active
         self.node.setActiveChannelFields(mscl.MipTypes.CLASS_AHRS_IMU, ahrsImuChs)
         self.node.setActiveChannelFields(mscl.MipTypes.CLASS_GNSS, gnssChs)
+        self.node.setActiveChannelFields(mscl.MipTypes.CLASS_ESTFILTER, estFilterChs)
 
         # start sampling on the AHRS/INS class of the Node
         self.node.enableDataStream(mscl.MipTypes.CLASS_AHRS_IMU)
@@ -45,18 +49,23 @@ class INS:
         # start sampling on the GNSS class of the Node
         self.node.enableDataStream(mscl.MipTypes.CLASS_GNSS)
 
+        # start sampling on the estimation filter class of the Node
+        self.node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
+
         # resume the INS
         self.node.resume()
 
         # initialize the INS data structure
         self.ins_data = {
-            "ts": time.time(),
             "accelX": 0,
             "accelY": 0,
             "accelZ": 0,
             "gyroX": 0,
             "gyroY": 0,
             "gyroZ": 0,
+            "pitch": 0,
+            "roll": 0,
+            "yaw": 0,
             "latitude": 0,
             "longitude": 0,
             "altitude": 0,
@@ -76,9 +85,6 @@ class INS:
         for packet in packets:
             # get data points from the packet
             points = packet.data()
-
-            # get the current timestamp
-            self.ins_data["ts"] = time.time()
             
             # process all the data points in the packet
             for dataPoint in points:
@@ -109,6 +115,16 @@ class INS:
                     self.ins_data["speed"] = dataPoint.as_float()
                 if dataPoint.channelName() == 'heading':
                     self.ins_data["heading"] = dataPoint.as_float()
+
+                # attitude data points
+                if dataPoint.channelName() == 'pitch':
+                    self.ins_data["pitch"] = dataPoint.as_float()
+                if dataPoint.channelName() == 'roll':
+                    self.ins_data["roll"] = dataPoint.as_float()
+                if dataPoint.channelName() == 'yaw':
+                    self.ins_data["yaw"] = dataPoint.as_float()
+
+                print(dataPoint.channelName())
         
         # return the collected data
         return self.ins_data
