@@ -15,6 +15,7 @@ import os
 from time import time
 import serial
 import datetime
+import gzip
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -32,7 +33,7 @@ class Datacollector():
         self.tempmonitor = Tempmonitor('CAN Addresses.csv')
         self.frontdaq = Daqboard('CAN Addresses.csv',deviceName='Front DAQ')
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
-        self.ins = INS('/dev/ttyS1')
+        self.ins = INS('/dev/ttyS0')
         
         # Make new directory to save files to
         self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -84,18 +85,27 @@ class Datacollector():
         if os.path.isfile(current_file_path):
             flags = 'a'
             # Join the fileDirectory which contains datalogging files
-            if int(os.path.getsize(current_file_path)) > file_size*1000:
+            if int(os.path.getsize(current_file_path)) > file_size:
+                
+                # Zip the last file created
+                with open(current_file_path,'rb') as fin, gzip.open(f'{current_file_path}.gz','wb') as fout:
+                    fout.writelines(fin)
+                #print(current_file_path)
+                # Remove the unzipped version of the newly zipped file to save space
+                os.remove(current_file_path)                
+                #Increment filecount index
                 self.indX += 1
                 # Check if we have exceeded the max file count
                 if self.indX > max_count:
-                    raise DataCollectorError("TooManyFilesError: dataCollector.py can no longer create new data logging files, the file limit has been exceeded!")
+                    raise DataCollectorError("TooManyFilesError: dataCollector.py can no longer create new data logging files, the file limit has been exceeded!")                
                 # update the filename
                 current_file = f'{self.indX}.dat'
+                current_file_path = os.path.join(self.fileDir, current_file)
                 
                 print("New Data Log File: " + current_file)
         # Write data to the current file
         # join the fileDirectory which contains datalogging files
-        with open(os.path.join(self.fileDir,current_file),flags) as write_file:  
+        with open(current_file_path,flags) as write_file:  
             json.dump(data,write_file)
             write_file.write('\n')
     
@@ -113,7 +123,7 @@ class Datacollector():
 
 # Start Logging
 if __name__=="__main__":
-    test = Datacollector(1,10)
+    test = Datacollector(fileSize=10,fileCount=100)
     test.startLogging()
 
             
