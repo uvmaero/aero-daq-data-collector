@@ -152,10 +152,14 @@ class Datacollector():
         
     # Purpose: begin logging data
     def startLogging(self,can_port = '/dev/ttyACM0'):
+        ser = serial.Serial(can_port,xonxoff=True,timeout=0.01)
         while True:
-            with serial.Serial(can_port,xonxoff = True,timeout=.01) as ser:
+            try:
                 can_data = ser.readline()
                 can_data = tuple(str(can_data).split())
+            except:
+                print('Datacollector Serial Read Error')
+                pass
             # Update the data dictionary
             self.buildData((0,0))
             # write data to logging file
