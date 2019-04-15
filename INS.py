@@ -28,20 +28,16 @@ class INS:
         ahrsImuChs = mscl.MipChannels()
         ahrsImuChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_SENSOR_SCALED_ACCEL_VEC, mscl.SampleRate.Hertz(50)))
         ahrsImuChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_SENSOR_SCALED_GYRO_VEC, mscl.SampleRate.Hertz(50)))
+        ahrsImuChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_SENSOR_EULER_ANGLES, mscl.SampleRate.Hertz(50)))
 
         # setup gps channels
         gnssChs = mscl.MipChannels()
         gnssChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_GNSS_LLH_POSITION, mscl.SampleRate.Hertz(4)))
         gnssChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_GNSS_NED_VELOCITY, mscl.SampleRate.Hertz(4)))
 
-        # setup estimation filter channels
-        estFilterChs = mscl.MipChannels()
-        estFilterChs.append(mscl.MipChannel(mscl.MipTypes.CH_FIELD_SENSOR_EULER_ANGLES, mscl.SampleRate.Hertz(50)))
-        
         # make channels active
         self.node.setActiveChannelFields(mscl.MipTypes.CLASS_AHRS_IMU, ahrsImuChs)
         self.node.setActiveChannelFields(mscl.MipTypes.CLASS_GNSS, gnssChs)
-        self.node.setActiveChannelFields(mscl.MipTypes.CLASS_ESTFILTER, estFilterChs)
 
         # start sampling on the AHRS/INS class of the Node
         self.node.enableDataStream(mscl.MipTypes.CLASS_AHRS_IMU)
@@ -49,8 +45,6 @@ class INS:
         # start sampling on the GNSS class of the Node
         self.node.enableDataStream(mscl.MipTypes.CLASS_GNSS)
 
-        # start sampling on the estimation filter class of the Node
-        self.node.enableDataStream(mscl.MipTypes.CLASS_ESTFILTER)
 
         # resume the INS
         self.node.resume()
@@ -123,8 +117,6 @@ class INS:
                     self.ins_data["roll"] = dataPoint.as_float()
                 if dataPoint.channelName() == 'yaw':
                     self.ins_data["yaw"] = dataPoint.as_float()
-
-                print(dataPoint.channelName())
         
         # return the collected data
         return self.ins_data

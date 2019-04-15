@@ -44,12 +44,12 @@ class Datacollector():
         # custom directory
         if workingDir == '':
             self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-            os.makedirs(self.fileDir)
             self.zipIt(directory=os.getcwd())
+            os.makedirs(self.fileDir)
         else:
             self.fileDir = os.path.join(workingDir,datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-            os.makedirs(self.fileDir)
             self.zipIt(directory=self.workingDir)
+            os.makedirs(self.fileDir)
 
         # Manifest.json dict
         self.manifest = {
@@ -76,19 +76,26 @@ class Datacollector():
                          'front_right': 0,\
                          'rear_left': 0,\
                          'rear_right': 0}
+    
+    # Get a list of subfolders in a directory
+    def subfolders(self, path):
+        try:
+            return next(os.walk(path))[1]
+        except StopIteration:
+            return []
 
     # Purpose: zip any folders currently contained in the user specified base directory
     def zipIt(self,directory):
         # see if the supplied directory contains any subfolders
-        if len(os.walk(self.workingDir)) > 0:
+	
+        if len(self.subfolders(directory)) > 0:
             # zip all directories insize the working directory
-            for root, dirs, files in os.walk(self.workingDir):
-                shutil.make_archive(dirs, 'zip',self.workingDir)
+            for root, dirs, files in os.walk(directory):
+                for d in dirs:
+                    folder_dir = os.path.join(directory, d)
+                    shutil.make_archive(folder_dir, 'zip',folder_dir)
+                    shutil.rmtree(folder_dir)
 
-            
-            
-
-        
     # Purpose: take the data dictionaries created by other data-device objects and build the overall data dictionary
     def buildData(self,can_data):
         self.dataDict['ts'] = time()
@@ -174,7 +181,7 @@ if __name__=="__main__":
     # fileCount represents the number of files which we will allow to be made
     # workingDir represents the base directory where subfolders containing Data will be written to
     # please don't change workingDir
-    test = Datacollector(fileSize=10,fileCount=1000,workingDir='/home/aero/Datalog')
+    test = Datacollector(fileSize=1,fileCount=1000,workingDir='/home/aero/Datalog')
     test.startLogging()
 
             
