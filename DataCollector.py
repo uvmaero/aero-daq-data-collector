@@ -1,14 +1,22 @@
 # Peter Ferland 03.14.19
 # AERO Data Acquisition Project
 
+# Import Extensions of canDevice Class for processing can data
 from Rinehart import Rinehart
 from Emus import Emus
+from Tempmonitor import Tempmonitor
+from Daqboard import Daqboard
+from Pedalboard import Pedalboard
 from Canpak import Canpak
+from INS import INS
 import json
 from DataCollectorError import DataCollectorError
 import os
 from time import time
 import serial
+import datetime
+import gzip
+import shutil
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -19,41 +27,82 @@ class Datacollector():
     # Inputs:
     #   fileSize - an integer representing the maximum allowable file size in Megabytes
     #   fileCount - an integer representing the maximum number of data files allowed
-    def __init__(self,fileSize,fileCount):
-        # create a Rinehart canDevice using
-        self.rinehart = Rinehart('rinehart_addresses.csv')
-        self.emus = Emus('emus_addresses.csv')
-        self.tempboard = Tempboard('temp_addresses.csv')
-        self.frontdaq = Daqboard('frontdaq_addresses.csv')
-        self.reardaq = Daqboard('reardaq_addresses.csv')
-        self.imu = imu()
+    def __init__(self,fileSize,fileCount,workingDir=''):
+        # create a Rinehart canDevices using the extended canDevice classes
+        self.rinehart = Rinehart('CAN Addresses.csv')
+        self.emus = Emus('CAN Addresses.csv')
+        self.tempmonitor = Tempmonitor('CAN Addresses.csv')
+        self.frontdaq = Daqboard('CAN Addresses.csv',deviceName='Front DAQ')
+        self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
+        self.ins = INS('/dev/ttyS0')
+        
+        # workingDir used by the zipIt function to navigate to the folder and 
+        # check for subfolders to zip
+        self.workingDir = workingDir
+
+        # Make new directory to save files to, first check if user supplied a
+        # custom directory
+        if workingDir == '':
+            self.fileDir = os.path.join(os.getcwd(),datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            os.makedirs(self.fileDir)
+            self.zipIt(directory=os.getcwd())
+        else:
+            self.fileDir = os.path.join(workingDir,datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            os.makedirs(self.fileDir)
+            self.zipIt(directory=self.workingDir)
+
+        # Manifest.json dict
+        self.manifest = {
+            # set date to mm-dd-yy format
+            "date": datetime.datetime.now().strftime('%m-%d-%Y'),
+            # set start_time using 24 hr clock with hh:mm
+            "start_time": datetime.datetime.now().strftime('%H:%M'),
+            # set start_time using 24 hr clock with hh:mm
+            "end_time": datetime.datetime.now().strftime('%H:%M'),
+            # The number of data files (equal to self.indX + 1)
+            "data_files": 1
+        }
+        # Datalogging file parameters
         self.fileSize = fileSize * 10**6
         self.fileCount = fileCount
         self.indX = 0
         self.dataDict = {'ts':0,\
                         'rinehart': 0,\
                          'emus': 0,\
-                         'imu': 0,\
+                         'ins': 0,\
                          'cell_volt': 0,\
                          'cell_temp': 0,\
-                         'fl_data': 0,\
-                         'fr_data': 0,\
-                         'rl_data': 0,\
-                         'rr_data': 0}
+                         'front_left': 0,\
+                         'front_right': 0,\
+                         'rear_left': 0,\
+                         'rear_right': 0}
 
+    # Purpose: zip any folders currently contained in the user specified base directory
+    def zipIt(self,directory):
+        # see if the supplied directory contains any subfolders
+        if len(os.walk(self.workingDir)) > 0:
+            # zip all directories insize the working directory
+            for root, dirs, files in os.walk(self.workingDir):
+                shutil.make_archive(dirs, 'zip',self.workingDir)
 
+            
+            
+
+        
     # Purpose: take the data dictionaries created by other data-device objects and build the overall data dictionary
-    def buildData(self,can_data,ser_data):
+    def buildData(self,can_data):
         self.dataDict['ts'] = time()
         self.dataDict['rinehart'] = self.rinehart.checkBroadcast(can_data)
         self.dataDict['emus'] = self.emus.checkBroadcast(can_data)[0]
         self.dataDict['cell_volt'] = self.emus.checkBroadcast(can_data)[1]
-        self.dataDict['cell_temp'] = self.tempboard.checkBroadcast(can_data)
-        self.dataDict['fl_data'] = self.frontdaq.checkBroadcast(can_data)
-        self.dataDict['fr_data'] = self.frontdaq.checkBroadcast(can_data)
-        self.dataDict['rl_data'] = self.reardaq.checkBroadcast(can_data)
-        self.dataDict['rr_data'] = self.reardaq.checkBroadcast(can_data)
-        self.dataDict['imu'] = self.imu.checkBroadcast(ser_data)
+        self.dataDict['temp_faults'] = self.tempmonitor.checkBroadcast(can_data)[0]
+        self.dataDict['cell_temp'] = self.tempmonitor.checkBroadcast(can_data)[1]
+        # Think about how to do this
+        self.dataDict['front_left'] = self.frontdaq.checkBroadcast(can_data)[0]
+        self.dataDict['front_right'] = self.frontdaq.checkBroadcast(can_data)[1]
+        self.dataDict['rear_left'] = self.reardaq.checkBroadcast(can_data)[0]
+        self.dataDict['rear_right'] = self.reardaq.checkBroadcast(can_data)[1]
+        self.dataDict['ins'] = self.ins.get_data(10)
 
     # Make a function to create a new data.json file if the current
     # data.json file size becomes too large
@@ -62,41 +111,70 @@ class Datacollector():
     #   file_name: the name of the .json file to write data into 
     #   count: the maximum number of files you will allow to be created
     #   data: the data to write to the json file, this will likely be a python dictionary
-    def RotateFile(self,data, max_count, file_size, file_name = ''):
-        current_file = file_name + str(self.indX) + ".dat"
+    def RotateFile(self,data, max_count, file_size):
+        current_file = f'{self.indX}.dat'   # This is the .dat file used for storing data
+        manifest_file = 'manifest.json'     # This is the manifest.json file
+        current_file_path = os.path.join(self.fileDir, current_file)
+        #manifest_file_path = os.path.join(self.fileDir, manifest_file)
         # Check if the current file has exceeded its size limit, if so increase
         # the counter index and return the updated counter index to the user
-        if int(os.path.getsize(current_file)) > file_size:
-            self.indX += 1
-            # Check if we have exceeded the max file count
-            if self.indX > max_count:
-                raise DataCollectorError("TooManyFilesError: dataCollector.py can no longer create new data logging files, the file limit has been exceeded!")
-            # update the filename
-            current_file = file_name + str(self.indX) + ".dat"
-            
-            print("New Data Log File: " + current_file)
-        # Write data to the current file  
-        with open(current_file,"a") as write_file:  
+        flags = 'w'
+        if os.path.isfile(current_file_path):
+            flags = 'a'
+            # Join the fileDirectory which contains datalogging files
+            if int(os.path.getsize(current_file_path)) > file_size:                
+                # Zip the last file created
+                with open(current_file_path,'rb') as fin, gzip.open(f'{current_file_path}.gz','wb') as fout:
+                    fout.writelines(fin)
+                #print(current_file_path)
+                # Remove the unzipped version of the newly zipped file to save space
+                os.remove(current_file_path)                
+                #Increment filecount index
+
+                self.indX += 1
+                # Check if we have exceeded the max file count
+                if self.indX > max_count:
+                    raise DataCollectorError("TooManyFilesError: dataCollector.py can no longer create new data logging files, the file limit has been exceeded!")                
+                # update the filename
+                current_file = f'{self.indX}.dat'
+                current_file_path = os.path.join(self.fileDir, current_file)
+                
+                print("New Data Log File: " + current_file)
+        # Write data to the current file
+        # join the fileDirectory which contains datalogging files
+        with open(current_file_path,flags) as write_file:  
             json.dump(data,write_file)
             write_file.write('\n')
+        # Update manifest.json
+        with open(os.path.join(self.fileDir,manifest_file),'w') as write_file:
+            self.manifest['end_time'] = datetime.datetime.now().strftime('%H:%M')
+            self.manifest['data_files'] = self.indX + 1
+            json.dump(self.manifest,write_file)
     
         
     # Purpose: begin logging data
-    def startLogging(self,imu_port,can_port = '/dev/ttyACM0'):
+    def startLogging(self,can_port = '/dev/ttyACM0'):
+        # changed serial functionality
+        ser = serial.Serial(can_port,xonxoff=True,timeout=0.01)
         while True:
-            with serial.Serial(can_port,xonxoff = True) as ser:
-
-                # For TESTING ONLY, DISABLE LATER!!!!!!!!!!!
-                self.rinehart.heartbeat()
-
+            try:
                 can_data = ser.readline()
                 can_data = tuple(str(can_data).split())
-                ser.close()
-            with serial.Serial(imu_port,xonxoff = True) as ser:
-                imu_data = ser.readline()
-                ser.close()
+            except:
+                print('Datacollector Serial Read Error')
+                pass
             # Update the data dictionary
-            self.buildData(can_data,imu_data)
+            self.buildData((0,0))
             # write data to logging file
-            self.RotateFile(self.dataDict,self.fileCount,self.indX,self.fileSize)
+            self.RotateFile(self.dataDict,self.fileCount,self.fileSize)
+
+# Start Logging
+if __name__=="__main__":
+    # fileSize represents the max filesize in MegaBytes
+    # fileCount represents the number of files which we will allow to be made
+    # workingDir represents the base directory where subfolders containing Data will be written to
+    # please don't change workingDir
+    test = Datacollector(fileSize=10,fileCount=1000,workingDir='/home/aero/Datalog')
+    test.startLogging()
+
             

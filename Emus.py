@@ -5,18 +5,18 @@
 # Information Sources: Rinehart Motor Controller, EMUS BMS, Temp Monitor Board
 # Information Sources: Steering Position, Wheel Speed, Throttle Position, Brake Pressure, Damper Position
 
-from canpak import Canpak
+from Canpak import Canpak
 import csv
 from CanError import CanError
 from CanDevice import CanDevice
 
 class Emus(CanDevice):
 
-    def __init__(self, filename, offset = 0):
-        super().__init__(filename,offset)
+    def __init__(self, filename, deviceName="Emus"):
+        super().__init__(filename,deviceName)
         # pre allocate a list of 80 elements to hold 80 cell voltages
         self.cellVoltages = [0] * 80
-        self.voltageDict = {"Cell Voltages":self.cellVoltages}
+        self.voltageDict = {"cell_volt":self.cellVoltages}
         self.dataDict = {"UnderVoltage":0,\
                         "OverVoltage":0,\
                         "DischargeOverCurrent":0,\
@@ -71,7 +71,7 @@ class Emus(CanDevice):
             # Update cell voltage list for cells 72 - 79
             self.cellVoltages[72:79] = data
         # Return a dictionary containing cell voltages
-        self.voltageDict["Cell Voltages"] = self.cellVoltages
+        self.voltageDict["cell_volt"] = self.cellVoltages
 
     # Purpose: Process Individual Cell Voltage Data From the EMUS
     # Input:

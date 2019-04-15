@@ -5,7 +5,7 @@
 # Information Sources: Rinehart Motor Controller, EMUS BMS, Temp Monitor Board
 # Information Sources: Steering Position, Wheel Speed, Throttle Position, Brake Pressure, Damper Position
 
-from canpak import Canpak
+from Canpak import Canpak
 import csv
 from RinehartError import RinehartError
 from CanDevice import CanDevice
@@ -22,9 +22,9 @@ class Rinehart(CanDevice):
     #   Offset - a decimal value describing the CAN offset applied 
     # Outputs:
     #   addressBook - used to parse data
-    def __init__(self, filename, Offset=0):
+    def __init__(self, filename, deviceName="Rinehart"):
         # 
-        super().__init__(filename,Offset)
+        super().__init__(filename, deviceName)
         # Initialize a dictionary to be used to return all data at once
         # TODO 03/19/18: Make a dictionary builder function which uses a csv file
         # to define the dictionary keys
