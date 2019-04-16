@@ -9,6 +9,7 @@ from Daqboard import Daqboard
 from Pedalboard import Pedalboard
 from Canpak import Canpak
 from INS import INS
+from LiveData import LiveData, LivePacketType
 import json
 from DataCollectorError import DataCollectorError
 import os
@@ -35,6 +36,7 @@ class Datacollector():
         self.frontdaq = Daqboard('CAN Addresses.csv',deviceName='Front DAQ')
         self.reardaq = Daqboard('CAN Addresses.csv',deviceName='Rear DAQ')
         self.ins = INS('/dev/ttyS0')
+        self.pedalboard = Pedalboard('CAN Addresses.csv')
         
         # workingDir used by the zipIt function to navigate to the folder and 
         # check for subfolders to zip
@@ -67,15 +69,16 @@ class Datacollector():
         self.fileCount = fileCount
         self.indX = 0
         self.dataDict = {'ts':0,\
-                        'rinehart': 0,\
-                         'emus': 0,\
-                         'ins': 0,\
+                        'rinehart': self.rinehart.dataDict,\
+                         'emus': self.emus.dataDict,\
+                         'ins': self.ins.ins_data,\
                          'cell_volt': 0,\
                          'cell_temp': 0,\
                          'front_left': 0,\
                          'front_right': 0,\
                          'rear_left': 0,\
-                         'rear_right': 0}
+                         'rear_right': 0,\
+                         'pedal_board':self.pedalboard.dataDict}
     
     # Get a list of subfolders in a directory
     def subfolders(self, path):
@@ -109,7 +112,68 @@ class Datacollector():
         self.dataDict['front_right'] = self.frontdaq.checkBroadcast(can_data)[1]
         self.dataDict['rear_left'] = self.reardaq.checkBroadcast(can_data)[0]
         self.dataDict['rear_right'] = self.reardaq.checkBroadcast(can_data)[1]
+        #self.dataDict['pedal_board'] = self.pedalboard.checkBroadcast(can_data)
         self.dataDict['ins'] = self.ins.get_data(10)
+        
+        #self.live.sendLivePacket(LivePacketType.PITCH, self.dataDict["ins"]["pitch"])
+        # Send Current from rinehart
+        try:
+            current_msg = f'current {self.dataDict["rinehart"]["Id_Current"]}\r\n'
+            self.live_ser.write(current_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send Cell Voltages from emus
+        try:
+            for cell,volt in enumerate(self.dataDict['cell_volt']):
+                volt_msg = f'cell_volt {cell} {volt}\r\n'
+                self.live_ser.write(volt_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send State of Charge from emus
+        try:
+            soc_msg = f'soc {0}\r\n'
+            self.live_ser.write(soc_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send Cell Temps from TempMonitor
+        try:
+            for cell,temp in enumerate(self.dataDict['cell_temp']):
+                temp_msg = f'cell_temp {cell} {temp}\r\n'
+                self.live_ser.write(temp_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send INS Speed
+        try:
+            speed_msg = f'speed {self.dataDict["ins"]["speed"]}\r\n'
+            self.live_ser.write(speed_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send INS pitch
+        try:
+            pitch_msg = f'pitch {self.dataDict["ins"]["pitch"]}\r\n'
+            self.live_ser.write(pitch_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send Rinehart Motor Temp
+        try:
+            mtemp_msg = f'motor_temp {self.dataDict["rinehart"]["Motor_Temp"]}\r\n'
+            self.live_ser.write(mtemp_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # Send Rinehart Controller Temp
+        try:
+            rtemp_msg = f'controller_temp {self.dataDict["rinehart"]["Gate_Driver_Temp"]}\r\n'
+            self.live_ser.write(rtemp_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # send throttle from pedal board
+        try:
+            throttle_msg = f'throttle {self.dataDict["pedal"]["pedal0"]}\r\n'
+            self.live_ser.write(throttle_msg.encode(encoding='UTF-8'))
+        except:
+            pass
+        # send
+	
 
     # Make a function to create a new data.json file if the current
     # data.json file size becomes too large
@@ -160,12 +224,14 @@ class Datacollector():
     
         
     # Purpose: begin logging data
-    def startLogging(self,can_port = '/dev/ttyACM0'):
+    def startLogging(self,can_port = '/dev/ttyACM0',live_port='/dev/ttyUSB0'):
         # changed serial functionality
-        ser = serial.Serial(can_port,xonxoff=True,timeout=0.01)
+        can_ser = serial.Serial(can_port,xonxoff=True,timeout=0.1)
+        live_ser = serial.Serial(live_port, baudrate=115200)
+        self.live = LiveData(live_ser)
         while True:
             try:
-                can_data = ser.readline()
+                can_data = can_ser.readline()
                 can_data = tuple(str(can_data).split())
             except:
                 print('Datacollector Serial Read Error')
