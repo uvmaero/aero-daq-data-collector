@@ -29,9 +29,9 @@ class Daqboard(CanDevice):
         # Byte 1 is right wheel speed data
         self.rightdataDict["wheel_speed"] = int(data[1])
         # Byte 2 is left damper data
-        self.leftdataDict["damper_pos"] = (data[2] - 127) * (2/255)
+        self.leftdataDict["damper_pos"] = super().concatBytes(data[3],data[2])/10
         # Byte 3 is right damper data
-        self.rightdataDict["damper_pos"] = (data[3] - 127) * (2/255)
+        self.rightdataDict["damper_pos"] = super().concatBytes(data[5],data[4])/10
 
     # Purpose: Determine which message was sent by the rinehart, perform appropriate data processing
     # and return the updated emus data dictionaries

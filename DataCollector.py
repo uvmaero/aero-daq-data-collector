@@ -18,6 +18,7 @@ import serial
 import datetime
 import gzip
 import shutil
+import string
 
 # Purpose: The Datacollector object will create an instance of all CAN and Serial devices which send vehicle data for logging.
 # This object will handle creation of data and json files and will do some general data preparation
@@ -227,19 +228,33 @@ class Datacollector():
     def startLogging(self,can_port = '/dev/ttyACM0',live_port='/dev/ttyUSB0'):
         # changed serial functionality
         can_ser = serial.Serial(can_port,xonxoff=True,timeout=0.1)
-        live_ser = serial.Serial(live_port, baudrate=115200)
-        self.live = LiveData(live_ser)
+        # Used to filter non-standard characters from can data        
+        #printable = set(string.printable)
+        try:
+            live_ser = serial.Serial(live_port, baudrate=115200)
+            self.live = LiveData(live_ser)
+        except:
+            pass
+        
         while True:
             try:
                 can_data = can_ser.readline()
-                can_data = tuple(str(can_data).split())
+                can_data = can_data[2:].strip()
+                can_data = can_data.decode('utf-8')
+                can_data = can_data.split(' ')
+                if len(can_data) == 2:
+                    can_data = tuple(can_data)
+                    # Update the data dictionary
+                    self.buildData(can_data)
+                    # write data to logging file
+                    self.RotateFile(self.dataDict,self.fileCount,self.fileSize)
+            except KeyboardInterrupt:
+                print('\n')
+                exit()
             except:
                 print('Datacollector Serial Read Error')
                 pass
-            # Update the data dictionary
-            self.buildData((0,0))
-            # write data to logging file
-            self.RotateFile(self.dataDict,self.fileCount,self.fileSize)
+            
 
 # Start Logging
 if __name__=="__main__":
